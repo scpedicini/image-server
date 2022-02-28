@@ -1,0 +1,30 @@
+.thumbsize {
+    /*margin: 3rem;*/
+}
+
+.astack {
+
+}
+
+.vstack {
+
+}
+
+.imgstack {
+    text-align: center;
+}
+
+img {
+    background: #F1F1FA;
+    width: 460px;
+    height: 460px;
+    /*display: block;*/
+    margin: 0.5rem;
+    /*border: 0.5em;*/
+    object-fit: contain;
+
+}
+
+/*section {*/
+/*    padding: 10px;*/
+/*}*/

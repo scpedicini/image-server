@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Template</title>
+    <script src="node_modules/speak-tts/lib/speak-tts.js"></script>
+    <link rel="stylesheet" href="template.css">
+</head>
+<body>
+<div>
+<div id="welcome">Welcome to my speech page</div>
+</div>
+
+<div>
+    <div>
+        <label for="ttsengines">Choose a TTS engine:</label>
+    </div>
+    <div>
+        <select id="ttsengines" name="ttsengines" size="10">
+            <option value="None">None</option>
+        </select>
+    </div>
+</div>
+<div>
+    <div>
+        <label for="textspeech">Text to Speak:</label>
+    </div>
+    <div>
+        <textarea id="textspeech" cols="80" rows="10" name="textspeech">This text will be read by the text to speech engine.</textarea>
+    </div>
+</div>
+
+<div>
+    <div>
+    <button id="btnspeak">Speak</button>
+    </div>
+</div>
+
+<script src="template.js"></script>
+</body>
+</html>

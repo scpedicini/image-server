@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Gallery Test</title>
+
+    <script src="/js/gallery.js"></script>
+    <link rel="stylesheet" href="/css/gallery.css">
+
+<!--    <link rel="stylesheet" href="/node_modules/glightbox/dist/css/glightbox.css">-->
+<!--    <script src="/node_modules/glightbox/dist/js/glightbox.min.js"></script>-->
+    <link rel="stylesheet" href="/js/vendor/glightbox/css/glightbox.css">
+    <script src="/js/vendor/glightbox/js/glightbox.js"></script>
+
+
+    <!-- Compiled and minified CSS -->
+    <link rel="stylesheet" href="/css/materialize.min.css">
+
+    <!-- Compiled and minified JavaScript -->
+    <script src="/js/materialize.min.js"></script>
+
+
+</head>
+<body>
+
+<div class="row">
+
+</div>
+
+
+<section id="pathsection">
+    <div class="row astack">
+        <div class="col offset-s1 s10">
+            {{ASTACK}}
+        </div>
+    </div>
+</section>
+
+<div class="row thumbsize">
+    <div class="col offset-s1 s10">
+    <label for="thumbsize">Thumbnail Size</label>
+    <input type="range" id="thumbsize" min="100" max="1000" value="450" />
+    </div>
+</div>
+
+
+
+<section id="vidsection">
+    <div class="row">
+    <label class="col offset-s1 s10">
+        <input type="checkbox" class="filled-in" id="togglevideos" checked />
+        <span>Show Videos</span>
+    </label>
+    <div class="vstack col offset-s1 s10">
+        {{VSTACK}}
+    </div>
+    </div>
+</section>
+
+<section id="imgsection">
+<div class="imgstack">
+{{IMGSTACK}}
+</div>
+</section>
+
+<script src="/js/gallery_template.js"></script>
+
+
+</body>
+</html>
