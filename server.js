@@ -74,8 +74,8 @@ function createOrGetThumbnail(vidfile) {
 
         // outputOptions [`-vf select='gt(scene\,${scenevariation})'`, "-frames:v 1" ]
         ffmpeg(vidfile)
-
-            .outputOptions(["-deinterlace", "-y", "-frames:v 1"])
+            // deinterlace has been deprecated and replaced with bwdif since ffmpeg v5
+            .outputOptions(["-filter:v bwdif=mode=send_field:parity=auto:deint=all", "-y", "-frames:v 1"])
             .output(thumbnailFullFile)
             .on('end', function (stdout, stderr) {
                 // if file not exists then update/insert row with scenevariation = scenevariation - 0.1
