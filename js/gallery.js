@@ -41,9 +41,18 @@ var options = {
 
 // gallery.init();
 
+function initLightGallery() {
+    lightGallery(document.getElementById('lightgallery'), {
+        //plugins: [lgZoom, lgThumbnail],
+        speed: 500,
+        licenseKey: '0000-0000-000-0000'
+    });
+}
 
 
 document.addEventListener("DOMContentLoaded", function () {
+    initLightGallery();
+
     return;
 
     var lazyloadImages;

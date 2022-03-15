@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{COMICNAME}}</title>
+
+
+<!--    <link rel="stylesheet" href="/node_modules/glightbox/dist/css/glightbox.css">-->
+<!--    <script src="/node_modules/glightbox/dist/js/glightbox.min.js"></script>-->
+    <link rel="stylesheet" href="/js/vendor/glightbox/css/glightbox.css">
+    <script src="/js/vendor/glightbox/js/glightbox.js"></script>
+
+    <!-- Compiled and minified CSS -->
+    <link rel="stylesheet" href="/css/materialize.min.css">
+
+    <!-- Compiled and minified JavaScript -->
+    <script src="/js/materialize.min.js"></script>
+
+    <link type="text/css" rel="stylesheet" href="/vendors/lightgallery/css/lightgallery-bundle.css" />
+
+    <script src="/vendors/lightgallery/lightgallery.umd.js"></script>
+
+
+    <script src="/js/gallery.js"></script>
+    <link rel="stylesheet" href="/css/gallery.css">
+
+</head>
+<body>
+
+<div class="row"></div>
+
+<div class="row thumbsize">
+    <div class="col offset-s1 s10">
+    <label for="thumbsize">Thumbnail Size</label>
+    <input type="range" id="thumbsize" min="100" max="1000" value="450" />
+    </div>
+</div>
+
+<section id="cbrsection">
+<div id="lightgallery" class="cbrstack">
+{{CBRSTACK}}
+</div>
+</section>
+
+<script src="/js/gallery_template.js"></script>
+
+</body>
+</html>
