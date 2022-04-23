@@ -123,24 +123,51 @@ async function createHtmlResponse(req, res, isVideoLibrary, isCbr, sortAlphabeti
                 const vid_files = all_files.filter(f => VID_EXTS.includes(f.toLowerCase().split('.').pop()));
 
                 // for every vid_file we need to get the absolute path
-                let vidblock = await Promise.all(vid_files.map(async x => {
-                    if(isVideoLibrary) {
-                        // just a list of links to save memory
-                        return aTag(staticMediaPath + '/' + encodeURIComponent(x), x);
-                    } else {
-                        const vidFullFile = path.join(logicalMediaPath, x);
-                        // full thumbnail generation
-                        const hash = await thumbnailManager.generateThumbnailHash(vidFullFile);
+                const allowParallel = false;
+                /** @type string[] */
+                let vidblock = undefined;
+                if(allowParallel) {
+                    vidblock = await Promise.all(vid_files.map(async x => {
+                        if(isVideoLibrary) {
+                            // just a list of links to save memory
+                            return aTag(staticMediaPath + '/' + encodeURIComponent(x), x);
+                        } else {
+                            const vidFullFile = path.join(logicalMediaPath, x);
+                            // full thumbnail generation
+                            const hash = await thumbnailManager.generateThumbnailHash(vidFullFile);
 
-                        let thumbnailFullFile = await thumbnailManager.fetchThumbnailForFile(hash);
-                        if (!thumbnailFullFile) {
-                            thumbnailFullFile = await thumbnailManager.generateThumbnail(hash, vidFullFile);
+                            let thumbnailFullFile = await thumbnailManager.fetchThumbnailForFile(hash);
+                            if (!thumbnailFullFile) {
+                                thumbnailFullFile = await thumbnailManager.generateThumbnail(hash, vidFullFile);
+                            }
+
+                            let thumb = '/thumbnails/' + path.basename(thumbnailFullFile);
+                            return divVid(staticMediaPath + '/' + encodeURIComponent(x), x, thumb);
                         }
+                    }));
+                } else {
+                    vidblock = [];
+                    for  (let x of vid_files) {
+                        if(isVideoLibrary) {
+                            // just a list of links to save memory
+                            vidblock.push(aTag(staticMediaPath + '/' + encodeURIComponent(x), x));
+                        } else {
+                            const vidFullFile = path.join(logicalMediaPath, x);
+                            // full thumbnail generation
+                            const hash = await thumbnailManager.generateThumbnailHash(vidFullFile);
 
-                        let thumb = '/thumbnails/' + path.basename(thumbnailFullFile);
-                        return divVid(staticMediaPath + '/' + encodeURIComponent(x), x, thumb);
+                            let thumbnailFullFile = await thumbnailManager.fetchThumbnailForFile(hash);
+                            if (!thumbnailFullFile) {
+                                thumbnailFullFile = await thumbnailManager.generateThumbnail(hash, vidFullFile);
+                            }
+
+                            let thumb = '/thumbnails/' + path.basename(thumbnailFullFile);
+                            vidblock.push(divVid(staticMediaPath + '/' + encodeURIComponent(x), x, thumb));
+                        }
                     }
-                }));
+                }
+
+
 
                 if (isVideoLibrary)
                     vidblock = vidblock.join('<br>');
