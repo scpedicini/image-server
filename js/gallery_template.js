@@ -19,11 +19,11 @@ function modifyThumbnailSize(size)
     }
 }
 
-document.getElementById('thumbsize').addEventListener('input', event => {
+document.getElementById('thumbsize')?.addEventListener('input', event => {
     modifyThumbnailSize(event.target.value);
 });
 
-document.getElementById('togglevideos').addEventListener('change', event => {
+document.getElementById('togglevideos')?.addEventListener('change', event => {
 
     //document.getElementsByClassName('vstack')[0].hidden = event.target.value !== 'on'
     document.getElementsByClassName('vstack')[0].hidden = !event.target.checked;

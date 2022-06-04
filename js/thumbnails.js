@@ -1,16 +1,20 @@
 const path = require("path");
-const fs_async = require('fs/promises');
-const { v4, uuidv4} = require('uuid')
+const { v4 } = require('uuid')
 const AdmZip = require('adm-zip');
 const ffmpeg = require("fluent-ffmpeg");
 const Database = require("better-sqlite3");
 const fs = require("fs");
+const fs_async = require('fs').promises;
 const {generateSHA256HashFromFile, verifyFileIsZip} = require("./image_utils");
 const {createDirectory, getAlphabetizedEntriesFromZip} = require("./utility_belt");
 
 class ThumbnailManager {
+
     /** @type {string} */
     ThumbnailDatabasePath
+
+    /** @type {string} */
+    ThumbnailDatabaseFilePath
 
     /** @type {BetterSqlite3.Database} */
     ThumbnailDb
@@ -18,14 +22,50 @@ class ThumbnailManager {
     /** @type {string} */
     ThumbnailPath
 
-    constructor(dbFilePath, thumbnailPath) {
-        this.ThumbnailDatabasePath = dbFilePath;
+    /** @type {boolean} */
+    cheatHash
+
+    /**
+     * @constructor
+     * @param {string} dbFilePath
+     * @param {string} thumbnailPath
+     * @param {boolean} cheatHash - If true don't use a SHA256 hash instead treat file name as a "hash" for performance
+     */
+    constructor(dbFilePath, thumbnailPath, cheatHash) {
+
+        // get the path without the filename of the database
+        this.ThumbnailDatabasePath = path.dirname(dbFilePath);
+        this.ThumbnailDatabaseFilePath = dbFilePath;
+
         this.ThumbnailPath = thumbnailPath;
+        this.cheatHash = cheatHash;
     }
 
     async initialize() {
-        this.ThumbnailDb = await this.getThumbnailDatabase(this.ThumbnailDatabasePath);
+        this.ThumbnailDb = await this.getThumbnailDatabase(this.ThumbnailDatabaseFilePath);
         await createDirectory(this.ThumbnailPath);
+    }
+
+    setHashAsFileName() {
+        this.cheatHash = true;
+    }
+
+    setHashAsSHA256() {
+        this.cheatHash = false;
+    }
+
+    async deleteAllThumbnails() {
+        const stmt = this.ThumbnailDb.prepare("DELETE FROM thumbnails");
+        const result = stmt.run();
+
+        // delete all files from thumbnail directory using async/await
+        const files = (await fs_async.readdir(this.ThumbnailPath)).filter(x => ['.png', '.gif', '.jpg', '.jpeg'].includes( x.toLocaleLowerCase().slice(-4)) );
+        for (const file of files) {
+            const filePath = path.join(this.ThumbnailPath, file);
+            await fs_async.unlink(filePath);
+        }
+
+        return result;
     }
 
     // Thumbnail Db [hash, imagepath, scenevariation]
@@ -70,8 +110,20 @@ class ThumbnailManager {
         return thumbnailImagePath;
     }
 
-    async generateThumbnailHash(filePath) {
-        const hash = await generateSHA256HashFromFile(filePath);
+    /**
+     * @param {string} relativeFilePath - Relative path to the file
+     * @returns {Promise<string>}
+     */
+    async generateThumbnailHash(relativeFilePath) {
+        let hash = undefined;
+
+        if (this.cheatHash) {
+            hash = relativeFilePath;
+        } else {
+            relativeFilePath = path.join(this.ThumbnailDatabasePath, x);
+            hash = await generateSHA256HashFromFile(relativeFilePath);
+        }
+
         return hash;
     }
 

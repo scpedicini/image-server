@@ -9,11 +9,13 @@ const fs = require('fs');
 const {stripQueryStringFromUrl} = require("./js/utility_belt");
 const {response} = require("express");
 const {buildComic} = require('./js/comic_parser');
+const yargs = require('yargs');
+const { hideBin } = require('yargs/helpers');
+
 
 // this gives back relative file names (does not include the paths)
 // const readDirAsync = promisify(fs.readdir);
 
-let masterPass = "bluenoyellow";
 let addressAuth = {};
 
 const IMAGE_EXTS = ['jpg', 'jpeg', 'png', 'gif', 'bmp'];
@@ -22,17 +24,43 @@ const COMIC_EXTS = ['cbr', 'cbz'];
 
 const DEVELOPER_MODE = true;
 
+const args = yargs(hideBin(process.argv))
+    .usage('Usage: $0 --path [path] --port [port] --pass [password]')
+    .option('path', {
+        describe: 'Path to the directory to serve if omitted the current directory is used',
+        type: 'string',
+    })
+    .option('port', {
+        describe: 'Port to serve on if omitted the port 12345 is used',
+        type: 'number',
+    })
+    .option('pass', {
+        describe: 'Password to use if omitted the password is not required',
+        type: 'string',
+    })
+    .option('clean-thumbnails', {
+        describe: 'Clean thumbnails for all images in the directory',
+        type: 'boolean',
+    })
+    .strict()
+    .parse();
+
+if(!args.path)
+    args.path = process.cwd();
+
+if(!args.port)
+    args.port = 12345;
+
+const rootMediaPath = args['path'];
+const serverPort = args['port'];
+const serverPass = args['pass']
+const cleanThumbnails = args['clean-thumbnails'];
+
 /**** FOLDER PATHS ****/
 
-let rootMediaPath = 'W:\\';
-
-if (process.argv.length === 3) {
-    rootMediaPath = process.argv[2];
-}
-
 const THUMBNAIL_PATH = path.join(rootMediaPath, 'thumbnails');
-const DB_PATH = path.join(rootMediaPath, 'server.db3');
-const thumbnailManager = new ThumbnailManager(DB_PATH, THUMBNAIL_PATH);
+const DB_PATH = path.join(rootMediaPath, 'image-server.db3');
+const thumbnailManager = new ThumbnailManager(DB_PATH, THUMBNAIL_PATH, true);
 
 const aTag = (href, title) => `<a href="${href}">${title}</a>`;
 const divImg = (img) => `<img src="${img}" alt="" loading="lazy" class="glightbox" data-gallery="picgallery">`;
@@ -49,13 +77,12 @@ const comicTemplateHtml = fs.readFileSync(path.join(__dirname, 'comic_template.h
 //const rootMediaPath = 'D:\\data\\webserver\\media';
 
 async function createHtmlResponse(req, res, isVideoLibrary, isCbr, sortAlphabetically) {
-    let response_sent = false;
-
-    if (addressAuth[req.connection.remoteAddress] !== true && !DEVELOPER_MODE) {
+    if (!DEVELOPER_MODE && serverPass !== undefined && addressAuth[req.connection.remoteAddress] !== true) {
         res.status(403).end();
-        response_sent = true;
         return;
     }
+
+    let response_sent = false;
 
     try {
         let request_url = decodeURIComponent(req.url.replace(new RegExp('/+$'), "")); // swapped from decodeURI which doesn't handle commmas %2C well
@@ -64,15 +91,15 @@ async function createHtmlResponse(req, res, isVideoLibrary, isCbr, sortAlphabeti
 
         let all_url_parts = stripQueryStringFromUrl(request_url).split('/').filter(r => r.trim().length > 0);
 
-        let parts = all_url_parts.slice(1); // remove the "comic/video/browse" part
+        const parts = all_url_parts.slice(1); // remove the "comic/video/browse" part
 
         // media is our static express route mapped to the logical passed-in rootMediaPath
         // example input: localhost/browse/folder1/folder2 => resulting: /media/folder1/folder2
-        let staticMediaPath = '/' + ['media', ...parts].join('/'); // join all the parts together
+        const staticMediaPath = '/' + ['media', ...parts].join('/'); // join all the parts together
 
-
-
-        let logicalMediaPath = path.join(rootMediaPath, parts.join(path.sep));
+        // Represents the relative path to the media folder
+        const relativeMediaPath = parts.join(path.sep);
+        const logicalMediaPath = path.join(rootMediaPath, parts.join(path.sep));
 
         if (fs.existsSync(logicalMediaPath)) {
 
@@ -127,14 +154,16 @@ async function createHtmlResponse(req, res, isVideoLibrary, isCbr, sortAlphabeti
                 /** @type string[] */
                 let vidblock = undefined;
                 if(allowParallel) {
+                    // this quickly exceeds memory limits due to multiple spawns of ffmpeg
                     vidblock = await Promise.all(vid_files.map(async x => {
                         if(isVideoLibrary) {
                             // just a list of links to save memory
                             return aTag(staticMediaPath + '/' + encodeURIComponent(x), x);
                         } else {
                             const vidFullFile = path.join(logicalMediaPath, x);
+                            const vidRelativeFile = path.join(relativeMediaPath, x);
                             // full thumbnail generation
-                            const hash = await thumbnailManager.generateThumbnailHash(vidFullFile);
+                            const hash = await thumbnailManager.generateThumbnailHash(vidRelativeFile);
 
                             let thumbnailFullFile = await thumbnailManager.fetchThumbnailForFile(hash);
                             if (!thumbnailFullFile) {
@@ -153,8 +182,9 @@ async function createHtmlResponse(req, res, isVideoLibrary, isCbr, sortAlphabeti
                             vidblock.push(aTag(staticMediaPath + '/' + encodeURIComponent(x), x));
                         } else {
                             const vidFullFile = path.join(logicalMediaPath, x);
+                            const vidRelativeFile = path.join(relativeMediaPath, x);
                             // full thumbnail generation
-                            const hash = await thumbnailManager.generateThumbnailHash(vidFullFile);
+                            const hash = await thumbnailManager.generateThumbnailHash(vidRelativeFile);
 
                             let thumbnailFullFile = await thumbnailManager.fetchThumbnailForFile(hash);
                             if (!thumbnailFullFile) {
@@ -178,19 +208,25 @@ async function createHtmlResponse(req, res, isVideoLibrary, isCbr, sortAlphabeti
                 const comicPath = '/' + ['cbr', ...parts].join('/'); // join all the parts together
                 let cbr_block = await Promise.all(cbr_files.map(async x => {
 
-                    const cbrFullFile = path.join(logicalMediaPath, x);
-                    const hash = await thumbnailManager.generateThumbnailHash(cbrFullFile);
+                    try {
+                        const cbrFullFile = path.join(logicalMediaPath, x);
+                        const cbrRelativeFile = path.join(relativeMediaPath, x);
+                        const hash = await thumbnailManager.generateThumbnailHash(cbrRelativeFile);
 
-                    let thumbnailFullFile = await thumbnailManager.fetchThumbnailForFile(hash);
-                    if (!thumbnailFullFile) {
-                        thumbnailFullFile = await thumbnailManager.generateThumbnail(hash, cbrFullFile);
+                        let thumbnailFullFile = await thumbnailManager.fetchThumbnailForFile(hash);
+                        if (!thumbnailFullFile) {
+                            thumbnailFullFile = await thumbnailManager.generateThumbnail(hash, cbrFullFile);
+                        }
+
+                        let thumb = '/thumbnails/' + path.basename(thumbnailFullFile);
+                        return divCbr(`${comicPath}?comicfile=${encodeURIComponent(x)}`, x, thumb);
+                    } catch (e) {
+                        console.error(e);
+                        return undefined;
                     }
-
-                    let thumb = '/thumbnails/' + path.basename(thumbnailFullFile);
-                    return divCbr(`${comicPath}?comicfile=${encodeURIComponent(x)}`, x, thumb);
                 }));
 
-                cbr_block = cbr_block.join('\n');
+                cbr_block = cbr_block.filter(c => c !== undefined).join('\n');
 
                 let galleryhtml = masterGalleryTemplateHtml;
                 galleryhtml = galleryhtml.replace("{{ASTACK}}", ablock);
@@ -270,7 +306,7 @@ app.get('/cbr', function (req, res) {
 
 app.get('/auth', (req, res) => {
     console.log("AUTH page hit");
-    if (req.query["pw"] === masterPass) {
+    if (req.query["pw"] === serverPass) {
         addressAuth[req.connection.remoteAddress] = true;
         res.send('Success').end();
     } else {
@@ -296,12 +332,15 @@ app.use("/vendors", express.static(path.join(__dirname, '/vendors')));
 
 (async () => {
     await thumbnailManager.initialize();
-    const server = app.listen(12345, function () {
 
-        let host = server.address().address;
-        let port = server.address().port;
+    if(cleanThumbnails === true) {
+        await thumbnailManager.deleteAllThumbnails();
+    }
 
-        console.log(`Example app listening at http://${host}:${port}`);
+    const server = app.listen(serverPort, function () {
+        /** @type {AddressInfo} */
+        const addr = server.address();
+        console.log(`Example app listening at http://${addr.host}:${addr.port}`);
     });
 })();
 

@@ -51,7 +51,9 @@ function initLightGallery() {
 
 
 document.addEventListener("DOMContentLoaded", function () {
-    initLightGallery();
+
+    if (document.getElementById('lightgallery') !== null)
+        initLightGallery();
 
     return;
 
