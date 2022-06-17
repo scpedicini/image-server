@@ -21,6 +21,7 @@ let addressAuth = {};
 const IMAGE_EXTS = ['jpg', 'jpeg', 'png', 'gif', 'bmp'];
 const VID_EXTS = ['mp4'];
 const COMIC_EXTS = ['cbr', 'cbz'];
+const HTML_EXTS = ['html', 'htm', 'xhtml'];
 
 const DEVELOPER_MODE = true;
 
@@ -103,7 +104,11 @@ async function createHtmlResponse(req, res, isVideoLibrary, isCbr, sortAlphabeti
 
         if (fs.existsSync(logicalMediaPath)) {
 
-            if (isCbr) {
+            if (HTML_EXTS.includes(logicalMediaPath.toLocaleLowerCase().split('.').pop())) {
+                res.set({'content-type': 'text/html; charset=utf-8'});
+                res.sendFile(logicalMediaPath);
+                response_sent = true;
+            } else if (isCbr) {
 
                 let comicName = req.query['comicfile'];
                 let physicalCbrFile = path.join(logicalMediaPath, comicName);
@@ -228,7 +233,13 @@ async function createHtmlResponse(req, res, isVideoLibrary, isCbr, sortAlphabeti
 
                 cbr_block = cbr_block.filter(c => c !== undefined).join('\n');
 
+                let htmlblock = all_files.filter(f => HTML_EXTS.includes(f.toLowerCase().split('.').pop()))
+                    .map(f => aTag(path.join(relativeMediaPath, encodeURIComponent(f)), f));
+                htmlblock = htmlblock.join('<br>');
+
+
                 let galleryhtml = masterGalleryTemplateHtml;
+                galleryhtml = galleryhtml.replace("{{HTMLSTACK}}", htmlblock);
                 galleryhtml = galleryhtml.replace("{{ASTACK}}", ablock);
                 galleryhtml = galleryhtml.replace("{{VSTACK}}", vidblock);
                 galleryhtml = galleryhtml.replace("{{CBRSTACK}}", cbr_block);
@@ -315,11 +326,6 @@ app.get('/auth', (req, res) => {
 });
 
 
-
-// this route isn't really necessary since index.html is already in static middleware "use"
-app.get('/gallery', async (req, res) => {
-    res.sendFile('gallery.html');
-});
 
 app.use("/thumbnails", express.static(THUMBNAIL_PATH));
 app.use("/media", express.static(rootMediaPath));
