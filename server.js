@@ -18,7 +18,7 @@ const { hideBin } = require('yargs/helpers');
 
 let addressAuth = {};
 
-const IMAGE_EXTS = ['jpg', 'jpeg', 'png', 'gif', 'bmp'];
+const IMAGE_EXTS = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
 const VID_EXTS = ['mp4'];
 const COMIC_EXTS = ['cbr', 'cbz'];
 const HTML_EXTS = ['html', 'htm', 'xhtml'];
