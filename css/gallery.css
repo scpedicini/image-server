@@ -32,3 +32,32 @@ img {
 /*section {*/
 /*    padding: 10px;*/
 /*}*/
+
+.image-container {
+    position: relative;
+    display: inline-block;
+}
+
+.copy-path-btn {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.copy-path-btn:first-of-type {
+    right: 45px;  /* Position first button */
+}
+
+.copy-path-btn:last-of-type {
+    right: 5px;   /* Position second button */
+}
+
+.copy-path-btn:hover {
+    background: rgba(255, 255, 255, 1);
+}

@@ -64,7 +64,14 @@ const DB_PATH = path.join(rootMediaPath, 'image-server.db3');
 const thumbnailManager = new ThumbnailManager(DB_PATH, THUMBNAIL_PATH, true);
 
 const aTag = (href, title) => `<a href="${href}">${title}</a>`;
-const divImg = (img) => `<img src="${img}" alt="" loading="lazy" class="glightbox" data-gallery="picgallery">`;
+const divImg = (img, originalPath) => `
+    <div class="image-container">
+        <img src="${img}" alt="" loading="lazy" class="glightbox" data-gallery="picgallery">
+        <button class="copy-path-btn" data-path="${originalPath}" onclick="copyFileNameToClipboard(event, '${originalPath}')">📋</button>
+        <button class="copy-path-btn" data-path="${originalPath}" onclick="copyTrueFileToClipboard(event, '${originalPath}')">💾</button>
+    </div>
+`;
+
 const divVid = (vid, title, thumbnail) => `<a href="${vid}" class="glightbox" data-gallery="vidgallery"> <img src="${thumbnail}" alt="${title}"> </a>`;
 const divhtml5Video = (vid, title, thumbnail) => `<video playsinline controls preload="nothing"> <source src="${vid}" type="video/mp4"> </video>`;
 
@@ -149,8 +156,12 @@ async function createHtmlResponse(req, res, isVideoLibrary, isCbr, sortAlphabeti
                     });
                 }
 
+                // handle the image files
                 const image_files = all_files.filter(f => IMAGE_EXTS.includes(f.toLowerCase().split('.').pop()));
-                let imgblock = image_files.map(f => divImg(staticMediaPath + '/' + encodeURIComponent(f))).join('\n');
+                let imgblock = image_files.map(f => {
+                    const imgFullFilePath = path.join(logicalMediaPath, f);
+                    return divImg(staticMediaPath + '/' + encodeURIComponent(f), imgFullFilePath);
+                }).join('\n');
 
                 const vid_files = all_files.filter(f => VID_EXTS.includes(f.toLowerCase().split('.').pop()));
 
@@ -322,6 +333,40 @@ app.get('/auth', (req, res) => {
         res.send('Success').end();
     } else {
         res.send('Auth failure').end();
+    }
+});
+
+// Add new endpoint to handle file copying
+app.get('/copy-file/:filename(*)', (req, res) => {
+    if (!DEVELOPER_MODE && serverPass !== undefined && addressAuth[req.connection.remoteAddress] !== true) {
+        res.status(403).end();
+        return;
+    }
+
+    const filePath = decodeURIComponent(req.params.filename);
+
+    try {
+        if (fs.existsSync(filePath)) {
+            // Get the proper MIME type based on file extension
+            const ext = path.extname(filePath).toLowerCase();
+            let mimeType = 'application/octet-stream';
+
+            if (['.jpg', '.jpeg'].includes(ext)) mimeType = 'image/jpeg';
+            else if (ext === '.png') mimeType = 'image/png';
+            else if (ext === '.gif') mimeType = 'image/gif';
+            else if (ext === '.bmp') mimeType = 'image/bmp';
+
+            res.sendFile(filePath, {
+                headers: {
+                    'Content-Type': mimeType
+                }
+            });
+        } else {
+            res.status(404).send('File not found');
+        }
+    } catch (error) {
+        console.error('Error serving file:', error);
+        res.status(500).send('Internal server error');
     }
 });
 
