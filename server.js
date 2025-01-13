@@ -64,13 +64,22 @@ const DB_PATH = path.join(rootMediaPath, 'image-server.db3');
 const thumbnailManager = new ThumbnailManager(DB_PATH, THUMBNAIL_PATH, true);
 
 const aTag = (href, title) => `<a href="${href}">${title}</a>`;
+// const divImg = (img, originalPath) => `
+//     <div class="image-container">
+//         <img src="${img}" alt="" loading="lazy" class="glightbox" data-gallery="picgallery">
+//         <button class="copy-path-btn" data-path="${originalPath}" onclick="copyFileNameToClipboard(event, '${originalPath}')">📋</button>
+//         <button class="copy-path-btn" data-path="${originalPath}" onclick="copyTrueFileToClipboard(event, '${originalPath}')">💾</button>
+//     </div>
+// `;
+
 const divImg = (img, originalPath) => `
     <div class="image-container">
         <img src="${img}" alt="" loading="lazy" class="glightbox" data-gallery="picgallery">
-        <button class="copy-path-btn" data-path="${originalPath}" onclick="copyFileNameToClipboard(event, '${originalPath}')">📋</button>
+        <button class="copy-path-btn" data-path="${originalPath.replace(/\\/g, '\\\\')}" onclick="copyFileNameToClipboard(event, '${originalPath.replace(/\\/g, '\\\\')}')">📋</button>
         <button class="copy-path-btn" data-path="${originalPath}" onclick="copyTrueFileToClipboard(event, '${originalPath}')">💾</button>
     </div>
 `;
+
 
 const divVid = (vid, title, thumbnail) => `<a href="${vid}" class="glightbox" data-gallery="vidgallery"> <img src="${thumbnail}" alt="${title}"> </a>`;
 const divhtml5Video = (vid, title, thumbnail) => `<video playsinline controls preload="nothing"> <source src="${vid}" type="video/mp4"> </video>`;
@@ -159,9 +168,8 @@ async function createHtmlResponse(req, res, isVideoLibrary, isCbr, sortAlphabeti
                 // handle the image files
                 const image_files = all_files.filter(f => IMAGE_EXTS.includes(f.toLowerCase().split('.').pop()));
                 let imgblock = image_files.map(f => {
-                    // const imgFullFilePath = path.join(logicalMediaPath, f);
+                    const imgFullFilePath = path.join(logicalMediaPath, f);
                     // join with path.sep to ensure proper OS-specific path separators
-                    const imgFullFilePath = path.join(logicalMediaPath, f).split('/').join(path.sep);
                     return divImg(staticMediaPath + '/' + encodeURIComponent(f), imgFullFilePath);
                 }).join('\n');
 
