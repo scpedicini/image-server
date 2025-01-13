@@ -159,7 +159,9 @@ async function createHtmlResponse(req, res, isVideoLibrary, isCbr, sortAlphabeti
                 // handle the image files
                 const image_files = all_files.filter(f => IMAGE_EXTS.includes(f.toLowerCase().split('.').pop()));
                 let imgblock = image_files.map(f => {
-                    const imgFullFilePath = path.join(logicalMediaPath, f);
+                    // const imgFullFilePath = path.join(logicalMediaPath, f);
+                    // join with path.sep to ensure proper OS-specific path separators
+                    const imgFullFilePath = path.join(logicalMediaPath, f).split('/').join(path.sep);
                     return divImg(staticMediaPath + '/' + encodeURIComponent(f), imgFullFilePath);
                 }).join('\n');
 
