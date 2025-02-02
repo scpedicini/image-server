@@ -77,9 +77,9 @@ const divImg = (img, originalPath) => `
         <img src="${img}" alt="" loading="lazy" class="glightbox" data-gallery="picgallery">
         <button class="copy-path-btn" data-path="${originalPath.replace(/\\/g, '\\\\')}" onclick="copyFileNameToClipboard(event, '${originalPath.replace(/\\/g, '\\\\')}')">📋</button>
         <button class="copy-path-btn" data-path="${originalPath}" onclick="copyTrueFileToClipboard(event, '${originalPath}')">💾</button>
+        <a href="/copy-file/${encodeURIComponent(originalPath)}" download class="copy-path-btn">📥</a>
     </div>
 `;
-
 
 const divVid = (vid, title, thumbnail) => `<a href="${vid}" class="glightbox" data-gallery="vidgallery"> <img src="${thumbnail}" alt="${title}"> </a>`;
 const divhtml5Video = (vid, title, thumbnail) => `<video playsinline controls preload="nothing"> <source src="${vid}" type="video/mp4"> </video>`;
@@ -365,6 +365,7 @@ app.get('/copy-file/:filename(*)', (req, res) => {
             else if (ext === '.png') mimeType = 'image/png';
             else if (ext === '.gif') mimeType = 'image/gif';
             else if (ext === '.bmp') mimeType = 'image/bmp';
+            else if (ext === '.webp') mimeType = 'image/webp';
 
             res.sendFile(filePath, {
                 headers: {

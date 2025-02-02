@@ -41,22 +41,37 @@ img {
 .copy-path-btn {
     position: absolute;
     bottom: 5px;
-    right: 5px;
     background: rgba(255, 255, 255, 0.8);
     border: 1px solid #ccc;
     border-radius: 4px;
     padding: 4px 8px;
     cursor: pointer;
     font-size: 12px;
+    /* Add these to normalize button and anchor appearance */
+    box-sizing: border-box;
+    line-height: 1;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.copy-path-btn:first-of-type {
-    right: 45px;  /* Position first button */
+/* First button (clipboard) */
+.image-container button.copy-path-btn:nth-of-type(1) {
+    right: 85px;
 }
 
-.copy-path-btn:last-of-type {
-    right: 5px;   /* Position second button */
+/* Second button (file) */
+.image-container button.copy-path-btn:nth-of-type(2) {
+    right: 45px;
 }
+
+/* Download link */
+.image-container a.copy-path-btn {
+    right: 5px;
+    text-decoration: none;
+}
+
 
 .copy-path-btn:hover {
     background: rgba(255, 255, 255, 1);
