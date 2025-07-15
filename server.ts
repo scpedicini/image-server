@@ -310,6 +310,7 @@ export default async function startServer(): Promise<void> {
           galleryhtml = galleryhtml.replace("{{VSTACK}}", videoBlockHtml);
           galleryhtml = galleryhtml.replace("{{CBRSTACK}}", cbrBlock);
           galleryhtml = galleryhtml.replace("{{IMGSTACK}}", isVideoLibrary ? "" : imgblock);
+          galleryhtml = galleryhtml.replace("{{ROOT_FOLDER}}", rootMediaPath);
 
           res.set({'content-type': 'text/html; charset=utf-8'});
           res.send(galleryhtml);
